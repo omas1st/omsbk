@@ -3,7 +3,9 @@ const router = express.Router();
 const auth = require('../middleware/auth');
 const userController = require('../controllers/userController');
 const multer = require('multer');
-const upload = multer({ dest: 'uploads/' }); // temp storage before Cloudinary
+
+// Use memory storage – files are never written to disk
+const upload = multer({ storage: multer.memoryStorage() });
 
 // All routes require authentication
 router.use(auth);

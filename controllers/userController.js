@@ -137,14 +137,28 @@ exports.requestDeposit = async (req, res) => {
 };
 
 // Upload proof of payment (Cloudinary)
+// Upload proof of payment (Cloudinary)
 exports.uploadProof = async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: 'No file uploaded' });
     }
 
-    const result = await cloudinary.uploader.upload(req.file.path, {
-      folder: 'oms_deposits'
+    // Upload buffer to Cloudinary using a stream
+    const result = await new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        { folder: 'oms_deposits' },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        }
+      );
+      // Pipe the buffer into the upload stream
+      const { Readable } = require('stream');
+      const readableStream = new Readable();
+      readableStream.push(req.file.buffer);
+      readableStream.push(null);
+      readableStream.pipe(uploadStream);
     });
 
     // Create deposit request with proof URL
@@ -160,6 +174,7 @@ exports.uploadProof = async (req, res) => {
 
     res.json({ message: 'Proof uploaded, deposit request pending', proofUrl: result.secure_url });
   } catch (error) {
+    console.error('Upload error:', error);
     res.status(500).json({ message: 'Upload failed' });
   }
 };
