@@ -17,7 +17,24 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Routes
+// ---------- NEW: Basic welcome routes ----------
+app.get('/', (req, res) => {
+  res.json({ message: 'Welcome to the OMS Brokerage API' });
+});
+
+app.get('/api', (req, res) => {
+  res.json({
+    message: 'OMS API is running',
+    endpoints: {
+      auth: '/api/auth',
+      user: '/api/user',
+      admin: '/api/admin'
+    }
+  });
+});
+// ------------------------------------------------
+
+// Existing API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/admin', adminRoutes);
