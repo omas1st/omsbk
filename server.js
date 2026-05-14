@@ -12,29 +12,40 @@ const adminRoutes = require('./routes/admin');
 
 const app = express();
 
-// Middleware
-app.use(cors());
+// ----------------- CORS FIX -----------------
+const allowedOrigins = [
+  'http://localhost:3000',                     // local development
+  'https://omsft.vercel.app',                 // your React frontend on Vercel
+  'https://omsbk.vercel.app'                  // in case you need to test from backend domain
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps, curl, Postman)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not allow access from the specified origin.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+// Explicitly handle preflight requests
+app.options('*', cors());
+// -------------------------------------------
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ---------- NEW: Basic welcome routes ----------
+// Basic welcome route
 app.get('/', (req, res) => {
   res.json({ message: 'Welcome to the OMS Brokerage API' });
 });
 
-app.get('/api', (req, res) => {
-  res.json({
-    message: 'OMS API is running',
-    endpoints: {
-      auth: '/api/auth',
-      user: '/api/user',
-      admin: '/api/admin'
-    }
-  });
-});
-// ------------------------------------------------
-
-// Existing API routes
+// API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/admin', adminRoutes);
@@ -62,7 +73,7 @@ mongoose
           country: 'AdminCountry',
           isAdmin: true,
           accountNumber,
-          referralCode: 'ADMIN001' // just for completeness, not used
+          referralCode: 'ADMIN001'
         });
         console.log('Admin user created successfully');
       } else {
@@ -79,3 +90,6 @@ mongoose
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+// Vercel serverless export
+module.exports = app;
