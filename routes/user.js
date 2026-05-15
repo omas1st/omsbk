@@ -25,4 +25,7 @@ router.post('/transfer', userController.requestTransfer);
 router.get('/referral-code', userController.getReferralCode);
 router.get('/notifications', userController.getNotifications);
 
+// NEW: Fetch current Bitcoin address (from admin settings)
+router.get('/bitcoin-address', userController.getBitcoinAddress);
+
 module.exports = router;

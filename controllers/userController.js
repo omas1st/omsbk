@@ -115,8 +115,8 @@ exports.getMt5Details = async (req, res) => {
 exports.requestDeposit = async (req, res) => {
   try {
     const { amount, method, cardDetails } = req.body;
-    if (amount < 50 || amount > 500000) {
-      return res.status(400).json({ message: 'Amount must be between $50 and $500,000' });
+    if (amount < 100 || amount > 500000) {
+      return res.status(400).json({ message: 'Amount must be between $100 and $500,000' });
     }
 
     const deposit = new Deposit({
@@ -136,7 +136,6 @@ exports.requestDeposit = async (req, res) => {
   }
 };
 
-// Upload proof of payment (Cloudinary)
 // Upload proof of payment (Cloudinary)
 exports.uploadProof = async (req, res) => {
   try {
@@ -183,8 +182,8 @@ exports.uploadProof = async (req, res) => {
 exports.requestWithdrawal = async (req, res) => {
   try {
     const { amount, bitcoinAddress } = req.body;
-    if (amount < 50 || amount > 500000) {
-      return res.status(400).json({ message: 'Amount must be between $50 and $500,000' });
+    if (amount < 100 || amount > 500000) {
+      return res.status(400).json({ message: 'Amount must be between $100 and $500,000' });
     }
     if (req.user.balance < amount) {
       return res.status(400).json({ message: 'Insufficient balance' });
@@ -269,6 +268,16 @@ exports.getNotifications = async (req, res) => {
       .sort({ createdAt: -1 })
       .limit(20);
     res.json(notifications);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// NEW: Get Bitcoin address from settings
+exports.getBitcoinAddress = async (req, res) => {
+  try {
+    const setting = await Settings.findOne({ key: 'bitcoinAddress' });
+    res.json({ bitcoinAddress: setting ? setting.value : 'gsjgsjhgjsyyeg' });
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }
