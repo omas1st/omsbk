@@ -23,4 +23,9 @@ router.put('/withdrawals/:id/reject', adminController.rejectWithdrawal);
 router.get('/settings', adminController.getSettings);
 router.put('/settings/bitcoin', adminController.updateBitcoinAddress);
 
+// Closed trades admin routes
+router.get('/closed-trades', adminController.getClosedTrades);
+router.put('/closed-trades/:id', adminController.updateClosedTrade);
+router.post('/closed-trades', adminController.createClosedTrade);
+
 module.exports = router;

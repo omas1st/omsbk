@@ -28,4 +28,13 @@ router.get('/notifications', userController.getNotifications);
 // NEW: Fetch current Bitcoin address (from admin settings)
 router.get('/bitcoin-address', userController.getBitcoinAddress);
 
+// Add after existing routes
+
+router.post('/trades', userController.executeTrade);
+router.get('/trades', userController.getUserTrades);
+
+// Add after existing trade routes
+router.put('/trades/update-tp-sl', userController.updateTradeTP_SL);
+router.put('/trades/close', userController.closeTrade);
+
 module.exports = router;

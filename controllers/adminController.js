@@ -4,6 +4,7 @@ const Withdrawal = require('../models/Withdrawal');
 const Notification = require('../models/Notification');
 const Settings = require('../models/Settings');
 const sendEmail = require('../utils/emailService');
+const Trade = require('../models/Trade');
 
 // Get all users – now sorted newest first
 exports.getUsers = async (req, res) => {
@@ -22,7 +23,6 @@ exports.deleteUser = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-    // Optionally delete associated deposits, withdrawals, etc.
     await Deposit.deleteMany({ user: user._id });
     await Withdrawal.deleteMany({ user: user._id });
     await Notification.deleteMany({ user: user._id });
@@ -82,9 +82,7 @@ exports.approveDeposit = async (req, res) => {
     await deposit.user.save();
     await deposit.save();
 
-    // Handle referral bonus: if user was referred and this is their first deposit, credit $20 to referrer
     if (deposit.user.referredBy) {
-      // Check if this is the first approved deposit
       const previousApproved = await Deposit.findOne({
         user: deposit.user._id,
         status: 'approved',
@@ -95,7 +93,6 @@ exports.approveDeposit = async (req, res) => {
         if (referrer) {
           referrer.balance += 20;
           await referrer.save();
-          // Notify referrer
           await Notification.create({
             user: referrer._id,
             message: `You earned $20 referral bonus from ${deposit.user.email}'s first deposit.`
@@ -104,7 +101,6 @@ exports.approveDeposit = async (req, res) => {
       }
     }
 
-    // Notify user
     await Notification.create({
       user: deposit.user._id,
       message: `Your deposit of $${deposit.amount} has been approved.`
@@ -227,6 +223,99 @@ exports.updateBitcoinAddress = async (req, res) => {
       { upsert: true, new: true }
     );
     res.json({ message: 'Bitcoin address updated' });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// ---------- Closed Trades Admin Functions ----------
+// Get all closed trades
+exports.getClosedTrades = async (req, res) => {
+  try {
+    const trades = await Trade.find({ status: 'closed' })
+      .populate('user', 'email balance')
+      .sort({ closedAt: -1 });
+    res.json(trades);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Update a closed trade – adjust user balance if profitLoss changed
+exports.updateClosedTrade = async (req, res) => {
+  try {
+    const { pair, type, orderType, lots, takeProfit, stopLoss, profitLoss, closePrice, closedAt } = req.body;
+    const trade = await Trade.findById(req.params.id);
+    if (!trade || trade.status !== 'closed') {
+      return res.status(404).json({ message: 'Closed trade not found' });
+    }
+
+    // Remember old profit for balance adjustment
+    const oldProfit = trade.profitLoss || 0;
+    let newProfit = oldProfit;
+
+    // Update fields
+    if (pair) trade.pair = pair;
+    if (type) trade.type = type;
+    if (orderType) trade.orderType = orderType;
+    if (lots !== undefined) trade.lots = lots;
+    if (takeProfit !== undefined) trade.takeProfit = takeProfit;
+    if (stopLoss !== undefined) trade.stopLoss = stopLoss;
+    if (profitLoss !== undefined) {
+      trade.profitLoss = profitLoss;
+      newProfit = profitLoss;
+    }
+    if (closePrice !== undefined) trade.closePrice = closePrice;
+    if (closedAt) trade.closedAt = new Date(closedAt);
+
+    await trade.save();
+
+    // Adjust user balance if profit changed
+    const profitDiff = newProfit - oldProfit;
+    if (profitDiff !== 0) {
+      const user = await User.findById(trade.user);
+      if (user) {
+        user.balance += profitDiff;
+        await user.save();
+      }
+    }
+
+    res.json({ message: 'Trade updated', trade });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Create a new closed trade (admin creates for a user)
+exports.createClosedTrade = async (req, res) => {
+  try {
+    const { userId, pair, type, orderType, lots, openPrice, closePrice, profitLoss, takeProfit, stopLoss, closedAt } = req.body;
+    const user = await User.findById(userId);
+    if (!user) return res.status(400).json({ message: 'User not found' });
+
+    const trade = new Trade({
+      user: userId,
+      pair,
+      type,
+      orderType: orderType || 'instant',
+      lots,
+      openPrice: openPrice || 0,
+      closePrice: closePrice || 0,
+      takeProfit: takeProfit || null,
+      stopLoss: stopLoss || null,
+      profitLoss: profitLoss || 0,
+      status: 'closed',
+      closedAt: closedAt ? new Date(closedAt) : new Date()
+    });
+    await trade.save();
+
+    // Add profit to user balance
+    if (profitLoss && profitLoss !== 0) {
+      user.balance += profitLoss;
+      await user.save();
+    }
+
+    res.status(201).json({ message: 'Closed trade created', trade });
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }
