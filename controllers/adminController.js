@@ -320,3 +320,25 @@ exports.createClosedTrade = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+// Delete a closed trade completely – adjust user balance accordingly
+exports.deleteClosedTrade = async (req, res) => {
+  try {
+    const trade = await Trade.findById(req.params.id);
+    if (!trade || trade.status !== 'closed') {
+      return res.status(404).json({ message: 'Closed trade not found' });
+    }
+
+    // Subtract the trade's profit/loss from the user's balance
+    const user = await User.findById(trade.user);
+    if (user) {
+      user.balance -= (trade.profitLoss || 0);
+      await user.save();
+    }
+
+    await Trade.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Closed trade deleted and user balance updated' });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};

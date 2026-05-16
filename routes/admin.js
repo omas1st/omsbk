@@ -27,5 +27,6 @@ router.put('/settings/bitcoin', adminController.updateBitcoinAddress);
 router.get('/closed-trades', adminController.getClosedTrades);
 router.put('/closed-trades/:id', adminController.updateClosedTrade);
 router.post('/closed-trades', adminController.createClosedTrade);
+router.delete('/closed-trades/:id', adminController.deleteClosedTrade);   // NEW
 
 module.exports = router;
