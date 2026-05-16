@@ -124,7 +124,7 @@ exports.getMt5Details = async (req, res) => {
       return res.status(400).json({ message: 'No balance, deposit first' });
     }
     res.json({
-      server: 'oms-mt5Real',
+      server: 'tradeaxis-mt5Real',
       login: req.user.accountNumber.replace('#', ''),
       password: req.user.mt5Password || ''
     });
@@ -160,7 +160,7 @@ exports.uploadProof = async (req, res) => {
     if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
     const result = await new Promise((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
-        { folder: 'oms_deposits' },
+        { folder: 'tradeaxis_deposits' },
         (error, result) => {
           if (error) reject(error);
           else resolve(result);

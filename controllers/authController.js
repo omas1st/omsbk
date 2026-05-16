@@ -127,7 +127,7 @@ exports.forgotPassword = async (req, res) => {
     await ResetCode.create({ email: email.toLowerCase(), code });
 
     // Send email
-    await sendEmail(email, 'Password Reset Code', `Your OMS password reset code is: ${code}`);
+    await sendEmail(email, 'Password Reset Code', `Your TradeAxis password reset code is: ${code}`);
 
     res.json({ message: 'Reset code sent to email' });
   } catch (error) {

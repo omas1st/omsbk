@@ -11,7 +11,7 @@ const transporter = nodemailer.createTransport({
 const sendEmail = async (to, subject, text) => {
   try {
     await transporter.sendMail({
-      from: `"OMS Brokerage" <${process.env.ADMIN_EMAIL}>`,
+      from: `"TradeAxis" <${process.env.ADMIN_EMAIL}>`,
       to,
       subject,
       text
