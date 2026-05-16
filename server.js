@@ -15,7 +15,9 @@ const app = express();
 // ----------------- CORS FIX -----------------
 const allowedOrigins = [
   'http://localhost:3000',                     // local development
-  'https://omsft.vercel.app',                 // your React frontend on Vercel
+  'https://omsft.vercel.app',
+  'https://www.tradeaxis.xyz',
+  'https://tradeaxis.xyz',                 // your React frontend on Vercel
   'https://omsbk.vercel.app'                  // in case you need to test from backend domain
 ];
 
